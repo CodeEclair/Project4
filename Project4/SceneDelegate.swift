@@ -2,7 +2,7 @@
 //  SceneDelegate.swift
 //  Project4
 //
-//  Created by Валерия Беленко on 15/10/2024.
+//  Created by Valeria Belenko on 15/10/2024.
 //
 
 import UIKit
