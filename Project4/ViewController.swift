@@ -11,7 +11,7 @@ import UIKit
 class ViewController: UIViewController, WKNavigationDelegate {
     var webView: WKWebView!
     var progressView: UIProgressView!
-    var websites = ["apple.com", "hackingwithswift.com", "google.com"]
+    var websites = ["github.com", "apple.com", "hackingwithswift.com"]
     
     override func loadView() {
         webView = WKWebView()
@@ -25,12 +25,14 @@ class ViewController: UIViewController, WKNavigationDelegate {
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Open", style: .plain, target: self, action: #selector(openTapped))
         let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
         let refresh = UIBarButtonItem(barButtonSystemItem: .refresh, target: webView, action: #selector(webView.reload))
+        let back = UIBarButtonItem(image: UIImage(systemName: "chevron.left"), style: .plain, target: webView, action: #selector(webView.goBack))
+        let forward = UIBarButtonItem(image: UIImage(systemName: "chevron.right"), style: .plain, target: webView, action: #selector(webView.goForward))
         
         progressView = UIProgressView(progressViewStyle: .default)
         progressView.sizeToFit()
         let progressButton = UIBarButtonItem(customView: progressView)
         
-        toolbarItems = [progressButton, spacer, refresh]
+        toolbarItems = [progressButton, spacer, back, forward, refresh]
         navigationController?.isToolbarHidden = false
         
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
@@ -52,6 +54,18 @@ class ViewController: UIViewController, WKNavigationDelegate {
         present(ac, animated: true)
     }
     
+    @objc func goBack() {
+        if webView.canGoBack {
+                webView.goBack()
+            }
+    }
+    
+    @objc func goForward() {
+        if webView.canGoForward {
+                webView.goForward()
+            }
+    }
+    
     func openPage(action: UIAlertAction) {
         guard let actionTitle = action.title else { return }
         guard let url = URL(string: "https://" + actionTitle) else {return}
@@ -71,16 +85,43 @@ class ViewController: UIViewController, WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let url = navigationAction.request.url
         
+        func blockedWebsite() {
+            guard let url = navigationAction.request.url, let host = url.host else {
+                decisionHandler(.cancel)
+                    return
+                }
+            
+            let ac = UIAlertController(title: "Sorry, this website is not allowed", message: nil, preferredStyle: .alert)
+            if !websites.contains(where: { host.contains($0) }) {
+                ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                ac.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+                present(ac, animated: true)
+                decisionHandler(.cancel)
+                
+            } else {
+                decisionHandler(.allow)
+                 }
+        }
+        
+        
+        
         if let host = url?.host {
             for website in websites {
                 if host.contains(website) {
                     decisionHandler(.allow)
                     return
+                    
                 }
             }
         }
+        blockedWebsite()
         
-        decisionHandler(.cancel)
+       // decisionHandler(.cancel)
+        
+       // let ac = UIAlertController(title: "Sorry, this website is not allowed", message: nil, preferredStyle: .alert)
+        //ac.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        //present(ac, animated: true)
+        
     }
 
 
